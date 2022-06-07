@@ -1,0 +1,46 @@
+gsmMux_ori------------->gsmmux源码
+gsmMux_mod------------->gsmmux源码修改
+usb_sprd.sh------------>设置usb的at口
+setgsm----------------->编译出的arm执行文件，设置链路规划
+setgsm.c--------------->设置链路规划的c文件
+setgsm.h--------------->头文件
+
+
+一.  环境配置：
+
+1: SL8563-CPE板子，两根usb线(一根是ap的串口log，一根是连接AT的物理口和adb数据线),稳压电源，串口小板（如果需要查看AP串口log，当前环境是有的）
+
+2: ubuntu电脑,电脑中安装adb命令
+
+3: 最新PAC包或者自己编译的PAC包(最新代码里已经将N_GSM打开）
+
+4: 下载邮件中的附件，包括设置tty链路规划的代码和gsmmuxd的修改代码
+
+---------------------------------------------------------------------
+
+二.  操作方法
+
+
+1: 电脑开机，将CPE板子接稳压电源，按电源键开机，插上usb数据线。
+2: 打开ubuntu终端，adb shell进入，占用adb口
+3： 打开另外一个终端，执行附件中的usb脚本，生成at命令口，当前是ttyUSB4
+4：运行testMux.sh脚本，开始生成模拟虚拟端口，进入cmux模式，参见如下图片，生成了两个虚拟口
+apuser@apuser-Lenovo:~/cmux/gsmMux_mod$ sudo ./testMux.sh
+5: 打开minicom，配置ap串口，如下，输入root登录，可以查看ap相关log信息
+6：继续打开另外一个终端，将附件中编译的bin文件setgsm放入/home/root目录下
+7: 当前atrouter正在使用ttyGS2设备，影响数据传输，需要将atrouter杀掉，我们才可以更改线路规划协议
+8: 进入minicom ap打印log的终端，执行setgsm,进入mux模式，从当前看，pppdial会创建出相应的gsmtty的虚拟节点
+9: 参照第4点，使用ls命令，查看虚拟设备对应的pst口，如下，pc端的usb口默认是没有权限的，需要修改虚拟口的权限，否则无法进行读写
+
+-------------------------以上环境配置好后，当前就可以测试cmux数据了，测试如下---------------
+
+
+1: ubuntu pc端写入数据------->kernel gsmtty设备接受数据
+
+ubuntu pc端写入数据,分别对mux0,mux1写入gsmtty1,gsmtty2
+gsmtty设备接受数据,通过adb shell，我们查询当前设备接受的数据，gsmtty1收到了gsmtty1,gsmtty2收到了gsmtty2
+
+2：kernel gsmtty设备写入数据--------->ubuntu pc端读入数据
+
+通过adb shell，对gsmtty1,gsmtty2分别写入gsmtty1,gsmtty2字符
+过ubuntu的虚拟终端，使用cat命令，查看虚拟终端接受的数据，如下，mux0收到了gsmtty1，mux1收到了gsmtty2
